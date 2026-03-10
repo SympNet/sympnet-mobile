@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "954097170174",
+    "project_id": "sympnet-b02e7",
+    "storage_bucket": "sympnet-b02e7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:954097170174:android:bf363e2011a0dfc5dc97af",
+        "android_client_info": {
+          "package_name": "com.sympnet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvJxbX72rjcJOO3rEg16OclHRuZ4yL8u8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
