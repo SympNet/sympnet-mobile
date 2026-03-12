@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Body Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+          --bg: #030810;
+          --panel: rgba(4, 18, 38, 0.85);
+          --cyan: #00d4ff;
+          --cyan2: #0090cc;
+          --red: #ff3a3a;
+          --red2: #cc1a1a;
+          --blue: #1a5eff;
+          --glow-cyan: 0 0 20px rgba(0,212,255,0.6);
+          --glow-red: 0 0 20px rgba(255,58,58,0.6);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+          background: var(--bg);
+          font-family: 'Rajdhani', sans-serif;
+          color: var(--cyan);
+          overflow: hidden;
+          height: 100vh;
+          width: 100vw;
+        }
+
+        /* Animated background grid */
+        body::before {
+          content:'';
+          position:fixed; inset:0;
+          background:
+            linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+          background-size: 40px 40px;
+          animation: gridPulse 4s ease-in-out infinite;
+          pointer-events:none; z-index:0;
+        }
+        @keyframes gridPulse {
+          0%,100% { opacity:0.5; }
+          50% { opacity:1; }
+        }
+
+        /* Scanline */
+        body::after {
+          content:'';
+          position:fixed; inset:0;
+          background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+          pointer-events:none; z-index:999;
+        }
+
+        #app {
+          position:relative;
+          width:100vw; height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          z-index:1;
+        }
+
+        /* Header */
+        #header {
+          position:fixed; top:0; left:0; right:0;
+          padding:16px 32px;
+          display:flex; align-items:center; justify-content:space-between;
+          background: linear-gradient(180deg, rgba(0,10,25,0.95) 0%, transparent 100%);
+          z-index:100;
+        }
+        #header h1 {
+          font-size:1.4rem; font-weight:700; letter-spacing:0.3em; text-transform:uppercase;
+          color: var(--cyan);
+          text-shadow: var(--glow-cyan);
+        }
+        .header-tag {
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.65rem; color: rgba(0,212,255,0.5);
+          letter-spacing:0.15em;
+        }
+
+        /* Body SVG container */
+        #body-container {
+          position:relative;
+          width: min(480px, 90vw);
+          height: min(780px, 90vh);
+          display:flex; align-items:center; justify-content:center;
+        }
+
+        #body-svg {
+          width:100%; height:100%;
+          filter: drop-shadow(0 0 30px rgba(0,212,255,0.2));
+        }
+
+        /* Hotspot zones */
+        .hotspot {
+          position:absolute;
+          cursor:pointer;
+          border-radius:50%;
+          transition: all 0.2s ease;
+        }
+        .hotspot::before {
+          content:'';
+          position:absolute; inset:-4px;
+          border-radius:50%;
+          border: 1.5px solid rgba(0,212,255,0.4);
+          animation: ringPulse 2s ease-in-out infinite;
+        }
+        .hotspot::after {
+          content:'';
+          position:absolute; inset:50%; transform:translate(-50%,-50%);
+          width:8px; height:8px;
+          border-radius:50%;
+          background: var(--cyan);
+          box-shadow: var(--glow-cyan);
+          animation: dotPulse 2s ease-in-out infinite;
+        }
+        .hotspot:hover { transform: scale(1.3); }
+        .hotspot:hover::after { background: #fff; box-shadow: 0 0 15px #fff; }
+
+        @keyframes ringPulse {
+          0%,100% { transform: scale(1); opacity:0.6; }
+          50% { transform: scale(1.4); opacity:0; }
+        }
+        @keyframes dotPulse {
+          0%,100% { opacity:1; }
+          50% { opacity:0.5; }
+        }
+
+        /* Heart specific - red pulsing */
+        .hotspot.heart::before { border-color: rgba(255,58,58,0.6); }
+        .hotspot.heart::after { background: var(--red); box-shadow: var(--glow-red); }
+
+        /* Organ info panel */
+        #info-panel {
+          position:fixed;
+          right: 24px; top:50%; transform:translateY(-50%);
+          width: 280px;
+          background: var(--panel);
+          border: 1px solid rgba(0,212,255,0.25);
+          border-left: 3px solid var(--cyan);
+          padding: 20px;
+          backdrop-filter: blur(12px);
+          opacity:0; pointer-events:none;
+          transition: all 0.3s ease;
+          z-index:200;
+          clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        #info-panel.visible { opacity:1; pointer-events:all; }
+        #info-panel h2 {
+          font-size:1.3rem; font-weight:700; letter-spacing:0.15em;
+          text-transform:uppercase; margin-bottom:6px;
+          color: var(--cyan);
+          text-shadow: var(--glow-cyan);
+        }
+        #info-panel .system-tag {
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.65rem; color: rgba(0,212,255,0.5);
+          letter-spacing:0.1em; margin-bottom:14px;
+        }
+        #info-panel p {
+          font-size:0.9rem; line-height:1.6; color: rgba(200,230,255,0.8);
+          margin-bottom:14px;
+        }
+        .stat-row {
+          display:flex; justify-content:space-between; align-items:center;
+          padding: 6px 0;
+          border-bottom: 1px solid rgba(0,212,255,0.1);
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.7rem;
+        }
+        .stat-label { color: rgba(0,212,255,0.5); }
+        .stat-value { color: var(--cyan); }
+        #close-btn {
+          position:absolute; top:12px; right:12px;
+          background:none; border:none; color: rgba(0,212,255,0.6);
+          cursor:pointer; font-size:1rem;
+          transition: color 0.2s;
+        }
+        #close-btn:hover { color: var(--red); }
+
+        /* Dropdown list when multiple organs */
+        #organ-list {
+          position:fixed;
+          background: rgba(3,12,28,0.97);
+          border: 1px solid rgba(0,212,255,0.3);
+          border-left: 3px solid var(--cyan);
+          backdrop-filter: blur(16px);
+          padding: 8px 0;
+          min-width:200px;
+          z-index:300;
+          opacity:0; pointer-events:none;
+          transition: all 0.2s ease;
+          clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+        }
+        #organ-list.visible { opacity:1; pointer-events:all; }
+        #organ-list .list-header {
+          padding: 8px 16px 10px;
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.65rem; color: rgba(0,212,255,0.45);
+          letter-spacing:0.15em; text-transform:uppercase;
+          border-bottom: 1px solid rgba(0,212,255,0.1);
+          margin-bottom:4px;
+        }
+        .organ-item {
+          padding: 9px 16px;
+          cursor:pointer;
+          display:flex; align-items:center; gap:10px;
+          font-size:0.9rem; letter-spacing:0.05em;
+          transition: all 0.15s ease;
+          color: rgba(180,220,255,0.8);
+        }
+        .organ-item:hover {
+          background: rgba(0,212,255,0.08);
+          color: var(--cyan);
+          padding-left:22px;
+        }
+        .organ-item::before {
+          content:'▸'; color: var(--cyan); font-size:0.7rem;
+          opacity:0; transition: opacity 0.15s;
+        }
+        .organ-item:hover::before { opacity:1; }
+
+        /* Vitals sidebar left */
+        #vitals {
+          position:fixed; left:24px; top:50%; transform:translateY(-50%);
+          display:flex; flex-direction:column; gap:16px;
+          z-index:100;
+        }
+        .vital-card {
+          background: var(--panel);
+          border: 1px solid rgba(0,212,255,0.2);
+          border-left: 2px solid var(--cyan);
+          padding:12px 16px; width:160px;
+          backdrop-filter: blur(8px);
+        }
+        .vital-label {
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.6rem; color: rgba(0,212,255,0.45);
+          letter-spacing:0.15em; margin-bottom:4px;
+        }
+        .vital-value {
+          font-size:1.5rem; font-weight:700;
+          color: var(--cyan); text-shadow: var(--glow-cyan);
+          font-family:'Share Tech Mono', monospace;
+        }
+        .vital-unit { font-size:0.7rem; color: rgba(0,212,255,0.5); margin-left:4px; }
+        .vital-bar {
+          height:3px; background: rgba(0,212,255,0.1);
+          margin-top:8px; border-radius:2px; overflow:hidden;
+        }
+        .vital-bar-fill {
+          height:100%; border-radius:2px;
+          background: linear-gradient(90deg, var(--cyan2), var(--cyan));
+        }
+        /* Heart rate bar animation */
+        #hr-bar .vital-bar-fill { animation: hrBar 0.857s ease-in-out infinite; }
+        @keyframes hrBar {
+          0%,45% { width:30%; }
+          50% { width:85%; background: linear-gradient(90deg, var(--red2), var(--red)); }
+          55%,100% { width:30%; }
+        }
+        /* SpO2 bar */
+        #spo2-bar .vital-bar-fill { width:97%; }
+        /* Resp bar */
+        #resp-bar .vital-bar-fill { animation: respBar 3s ease-in-out infinite; }
+        @keyframes respBar {
+          0%,100% { width:20%; }
+          50% { width:70%; }
+        }
+
+        /* ECG line */
+        #ecg-container {
+          position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+          width: 500px; height:60px;
+          background: var(--panel);
+          border: 1px solid rgba(0,212,255,0.15);
+          backdrop-filter: blur(8px);
+          overflow:hidden;
+          display:flex; align-items:center;
+          padding: 0 16px;
+        }
+        #ecg-label {
+          font-family:'Share Tech Mono', monospace;
+          font-size:0.6rem; color: rgba(0,212,255,0.4);
+          letter-spacing:0.1em; position:absolute; top:8px; left:12px;
+        }
+        #ecg-canvas { width:100%; height:100%; }
+
+        /* Breath ring */
+        #breath-ring {
+          position:fixed; bottom:30px; right:30px;
+          width:64px; height:64px;
+        }
+        .breath-circle {
+          position:absolute; inset:0;
+          border-radius:50%;
+          border: 1.5px solid rgba(0,212,255,0.3);
+          animation: breathe 4s ease-in-out infinite;
+        }
+        .breath-circle:nth-child(2) { animation-delay:0.5s; border-color: rgba(0,212,255,0.15); }
+        .breath-circle:nth-child(3) { animation-delay:1s; border-color: rgba(0,212,255,0.08); }
+        @keyframes breathe {
+          0%,100% { transform: scale(0.6); opacity:1; }
+          50% { transform: scale(1.3); opacity:0; }
+        }
+        .breath-center {
+          position:absolute; inset:50%; transform:translate(-50%,-50%);
+          width:12px; height:12px; border-radius:50%;
+          background: var(--cyan); box-shadow: var(--glow-cyan);
+          animation: breatheCore 4s ease-in-out infinite;
+        }
+        @keyframes breatheCore {
+          0%,100% { transform:translate(-50%,-50%) scale(0.8); opacity:0.6; }
+          50% { transform:translate(-50%,-50%) scale(1.4); opacity:1; }
+        }
+
+        /* Tooltip */
+        #tooltip {
+          position:fixed;
+          background: rgba(0,20,50,0.9);
+          border: 1px solid rgba(0,212,255,0.4);
+          padding:6px 12px;
+          font-size:0.8rem; letter-spacing:0.05em;
+          pointer-events:none; opacity:0;
+          transition: opacity 0.15s;
+          z-index:400;
+          white-space:nowrap;
+        }
+        #tooltip.show { opacity:1; }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <h1>Human Body Explorer</h1>
+    <div class="header-tag">ANATOMICAL VISUALIZATION SYSTEM v2.4 // INTERACTIVE MODE</div>
+</div>
+
+<div id="app">
+    <div id="body-container">
+        <!-- SVG Human Body -->
+        <svg id="body-svg" viewBox="0 0 320 700" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Body glow filter -->
+                <filter id="bodyGlow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <filter id="organGlow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <!-- Skin gradient -->
+                <linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:rgba(0,180,220,0.08)"/>
+                    <stop offset="50%" style="stop-color:rgba(0,180,220,0.15)"/>
+                    <stop offset="100%" style="stop-color:rgba(0,180,220,0.08)"/>
+                </linearGradient>
+                <linearGradient id="muscleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:rgba(220,60,60,0.3)"/>
+                    <stop offset="50%" style="stop-color:rgba(220,60,60,0.5)"/>
+                    <stop offset="100%" style="stop-color:rgba(220,60,60,0.3)"/>
+                </linearGradient>
+                <radialGradient id="heartGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#ff6060"/>
+                    <stop offset="100%" style="stop-color:#aa0000"/>
+                </radialGradient>
+                <radialGradient id="lungGrad" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" style="stop-color:rgba(100,140,255,0.7)"/>
+                    <stop offset="100%" style="stop-color:rgba(40,80,200,0.4)"/>
+                </radialGradient>
+                <radialGradient id="brainGrad" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" style="stop-color:rgba(200,150,255,0.8)"/>
+                    <stop offset="100%" style="stop-color:rgba(120,60,200,0.5)"/>
+                </radialGradient>
+            </defs>
+
+            <!-- Outer body silhouette glow -->
+            <ellipse cx="160" cy="65" rx="46" ry="55" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1" filter="url(#bodyGlow)"/>
+            <!-- Torso glow -->
+            <rect x="102" y="170" width="116" height="200" rx="18" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="1"/>
+
+            <!-- ===== HEAD ===== -->
+            <!-- Head silhouette -->
+            <ellipse cx="160" cy="65" rx="44" ry="52" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.35)" stroke-width="1.2"/>
+            <!-- Skull outline detail -->
+            <ellipse cx="160" cy="55" rx="38" ry="40" fill="none" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4 3"/>
+            <!-- Face features (subtle) -->
+            <ellipse cx="148" cy="62" rx="6" ry="4" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            <ellipse cx="172" cy="62" rx="6" ry="4" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            <path d="M 150 78 Q 160 83 170 78" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            <!-- Neck -->
+            <rect x="148" y="115" width="24" height="30" rx="8" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.25)" stroke-width="1"/>
+
+            <!-- ===== BRAIN (visible through skull) ===== -->
+            <g id="brain-organ" opacity="0.8">
+                <ellipse cx="160" cy="52" rx="32" ry="28" fill="url(#brainGrad)" stroke="rgba(180,120,255,0.5)" stroke-width="1"/>
+                <!-- Brain folds -->
+                <path d="M 132 50 Q 140 42 148 50 Q 156 42 164 50 Q 172 42 180 50 Q 184 56 180 62 Q 172 56 164 62 Q 156 56 148 62 Q 140 56 132 62 Z" fill="none" stroke="rgba(180,120,255,0.4)" stroke-width="0.8"/>
+                <path d="M 140 45 Q 160 38 180 45" fill="none" stroke="rgba(180,120,255,0.3)" stroke-width="0.8"/>
+                <path d="M 136 56 L 184 56" fill="none" stroke="rgba(180,120,255,0.25)" stroke-width="0.6" stroke-dasharray="3 2"/>
+            </g>
+
+            <!-- ===== SHOULDERS & ARMS ===== -->
+            <!-- Left shoulder -->
+            <path d="M 104 170 Q 70 175 58 200 L 55 280 Q 53 290 58 295 L 68 295 Q 75 290 76 280 L 80 210 L 104 200 Z"
+                  fill="url(#muscleGrad)" stroke="rgba(220,80,80,0.4)" stroke-width="1"/>
+            <!-- Right shoulder -->
+            <path d="M 216 170 Q 250 175 262 200 L 265 280 Q 267 290 262 295 L 252 295 Q 245 290 244 280 L 240 210 L 216 200 Z"
+                  fill="url(#muscleGrad)" stroke="rgba(220,80,80,0.4)" stroke-width="1"/>
+            <!-- Left lower arm -->
+            <path d="M 58 295 Q 52 320 54 360 L 58 390 Q 62 400 68 398 L 74 396 Q 78 385 76 360 L 74 295 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <!-- Right lower arm -->
+            <path d="M 262 295 Q 268 320 266 360 L 262 390 Q 258 400 252 398 L 246 396 Q 242 385 244 360 L 246 295 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <!-- Left hand -->
+            <ellipse cx="63" cy="410" rx="12" ry="18" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <!-- Right hand -->
+            <ellipse cx="257" cy="410" rx="12" ry="18" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+
+            <!-- ===== TORSO ===== -->
+            <path d="M 104 170 L 104 370 Q 104 390 120 398 L 200 398 Q 216 390 216 370 L 216 170 Q 216 155 160 150 Q 104 155 104 170 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.3)" stroke-width="1.2"/>
+            <!-- Rib cage outline -->
+            <path d="M 118 190 Q 160 182 202 190 L 205 270 Q 160 280 115 270 Z"
+                  fill="none" stroke="rgba(0,212,255,0.12)" stroke-width="1" stroke-dasharray="4 3"/>
+            <!-- Rib lines -->
+            <path d="M 120 205 Q 160 198 200 205" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <path d="M 118 220 Q 160 213 202 220" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <path d="M 117 235 Q 160 228 203 235" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <path d="M 116 250 Q 160 243 204 250" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <path d="M 116 265 Q 160 258 204 265" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <!-- Sternum -->
+            <line x1="160" y1="188" x2="160" y2="275" stroke="rgba(0,212,255,0.15)" stroke-width="1" stroke-dasharray="3 2"/>
+            <!-- Muscle definition on torso -->
+            <path d="M 135 300 Q 160 295 185 300 L 188 360 Q 160 370 132 360 Z"
+                  fill="url(#muscleGrad)" stroke="rgba(220,80,80,0.2)" stroke-width="0.8" opacity="0.4"/>
+
+            <!-- ===== LUNGS ===== -->
+            <g id="lungs-organ">
+                <!-- Left lung -->
+                <path id="left-lung" d="M 118 192 Q 108 210 108 250 Q 108 272 122 278 L 152 278 L 152 192 Z"
+                      fill="url(#lungGrad)" stroke="rgba(100,150,255,0.5)" stroke-width="1.2"
+                      style="transform-origin: 130px 235px; animation: breatheLung 4s ease-in-out infinite;"/>
+                <!-- Right lung -->
+                <path id="right-lung" d="M 202 192 Q 212 210 212 250 Q 212 272 198 278 L 168 278 L 168 192 Z"
+                      fill="url(#lungGrad)" stroke="rgba(100,150,255,0.5)" stroke-width="1.2"
+                      style="transform-origin: 190px 235px; animation: breatheLung 4s ease-in-out infinite;"/>
+            </g>
+            <style>
+                @keyframes breatheLung {
+                  0%,100% { transform: scaleX(1) scaleY(1); opacity:0.7; }
+                  50% { transform: scaleX(1.06) scaleY(1.04); opacity:1; }
+                }
+            </style>
+
+            <!-- ===== HEART ===== -->
+            <g id="heart-organ" style="transform-origin: 155px 243px; animation: heartbeat 0.857s ease-in-out infinite;">
+                <path d="M 155 260 Q 135 245 135 232 Q 135 218 147 218 Q 152 218 155 223 Q 158 218 163 218 Q 175 218 175 232 Q 175 245 155 260 Z"
+                      fill="url(#heartGrad)" stroke="rgba(255,80,80,0.7)" stroke-width="1.5" filter="url(#organGlow)"/>
+                <!-- Heart highlight -->
+                <path d="M 148 224 Q 153 220 157 224" fill="none" stroke="rgba(255,150,150,0.5)" stroke-width="1"/>
+                <!-- Aorta stub -->
+                <path d="M 155 218 L 155 205 Q 155 198 162 195 L 168 192" fill="none" stroke="rgba(255,80,80,0.5)" stroke-width="2"/>
+                <!-- Pulmonary artery -->
+                <path d="M 155 220 Q 148 210 140 208" fill="none" stroke="rgba(100,150,255,0.5)" stroke-width="1.5"/>
+                <path d="M 155 220 Q 162 210 170 208" fill="none" stroke="rgba(100,150,255,0.5)" stroke-width="1.5"/>
+            </g>
+            <style>
+                @keyframes heartbeat {
+                  0%   { transform: scale(1);    }
+                  10%  { transform: scale(1.18); }
+                  20%  { transform: scale(0.96); }
+                  30%  { transform: scale(1.12); }
+                  40%  { transform: scale(1);    }
+                  100% { transform: scale(1);    }
+                }
+            </style>
+
+            <!-- ===== ABDOMINAL ORGANS ===== -->
+            <!-- Stomach -->
+            <path id="stomach-organ" d="M 140 290 Q 128 292 126 308 Q 124 325 138 330 L 162 330 Q 172 325 170 308 Q 168 292 158 290 Z"
+                  fill="rgba(200,150,80,0.35)" stroke="rgba(200,150,80,0.5)" stroke-width="1"/>
+            <!-- Liver -->
+            <path id="liver-organ" d="M 168 290 Q 196 288 200 305 Q 204 322 188 328 L 168 328 Z"
+                  fill="rgba(180,100,60,0.4)" stroke="rgba(180,100,60,0.6)" stroke-width="1"/>
+            <!-- Spleen -->
+            <path id="spleen-organ" d="M 115 310 Q 108 310 108 322 Q 108 334 116 336 L 126 334 Q 132 328 130 316 Z"
+                  fill="rgba(160,80,120,0.4)" stroke="rgba(160,80,120,0.5)" stroke-width="1"/>
+            <!-- Intestines group -->
+            <g id="intestines-organ" opacity="0.7">
+                <path d="M 118 340 Q 108 355 112 375 Q 116 392 130 395 L 190 395 Q 204 392 208 375 Q 212 355 202 340 Q 180 348 160 345 Q 140 348 118 340 Z"
+                      fill="rgba(150,100,60,0.3)" stroke="rgba(150,100,60,0.4)" stroke-width="1"/>
+                <!-- Intestine loops detail -->
+                <path d="M 122 355 Q 135 348 148 355 Q 135 362 122 355" fill="none" stroke="rgba(150,100,60,0.5)" stroke-width="0.8"/>
+                <path d="M 148 355 Q 161 348 174 355 Q 161 362 148 355" fill="none" stroke="rgba(150,100,60,0.5)" stroke-width="0.8"/>
+                <path d="M 174 355 Q 187 348 198 355 Q 187 362 174 355" fill="none" stroke="rgba(150,100,60,0.5)" stroke-width="0.8"/>
+                <path d="M 120 368 Q 140 360 160 368 Q 140 376 120 368" fill="none" stroke="rgba(150,100,60,0.4)" stroke-width="0.8"/>
+                <path d="M 160 368 Q 180 360 200 368 Q 180 376 160 368" fill="none" stroke="rgba(150,100,60,0.4)" stroke-width="0.8"/>
+            </g>
+
+            <!-- ===== SPINE ===== -->
+            <g id="spine-organ" opacity="0.5">
+                <line x1="160" y1="145" x2="160" y2="395" stroke="rgba(0,212,255,0.2)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                <!-- Vertebrae markers -->
+                <rect x="155" y="170" width="10" height="6" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+                <rect x="155" y="185" width="10" height="6" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+                <rect x="155" y="200" width="10" height="6" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+                <rect x="155" y="215" width="10" height="6" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+                <rect x="155" y="230" width="10" height="6" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+                <rect x="155" y="280" width="10" height="6" rx="2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.25)" stroke-width="0.8"/>
+                <rect x="155" y="296" width="10" height="6" rx="2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.25)" stroke-width="0.8"/>
+                <rect x="155" y="312" width="10" height="6" rx="2" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.25)" stroke-width="0.8"/>
+                <rect x="155" y="328" width="10" height="6" rx="2" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+                <rect x="155" y="344" width="10" height="6" rx="2" fill="rgba(0,212,255,0.12)" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            </g>
+
+            <!-- ===== KIDNEYS ===== -->
+            <!-- Left kidney -->
+            <path id="left-kidney" d="M 112 335 Q 106 332 104 342 Q 102 352 108 357 L 118 357 Q 124 352 124 342 Q 124 332 118 335 Z"
+                  fill="rgba(180,120,60,0.45)" stroke="rgba(180,120,60,0.6)" stroke-width="1"/>
+            <!-- Right kidney -->
+            <path id="right-kidney" d="M 208 335 Q 214 332 216 342 Q 218 352 212 357 L 202 357 Q 196 352 196 342 Q 196 332 202 335 Z"
+                  fill="rgba(180,120,60,0.45)" stroke="rgba(180,120,60,0.6)" stroke-width="1"/>
+
+            <!-- ===== LEGS ===== -->
+            <!-- Left thigh -->
+            <path d="M 106 398 L 100 520 Q 98 535 104 540 L 128 540 Q 134 535 132 520 L 132 398 Z"
+                  fill="url(#muscleGrad)" stroke="rgba(220,80,80,0.3)" stroke-width="1" opacity="0.8"/>
+            <!-- Right thigh -->
+            <path d="M 214 398 L 220 520 Q 222 535 216 540 L 192 540 Q 186 535 188 520 L 188 398 Z"
+                  fill="url(#muscleGrad)" stroke="rgba(220,80,80,0.3)" stroke-width="1" opacity="0.8"/>
+            <!-- Left knee -->
+            <ellipse cx="116" cy="548" rx="16" ry="12" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <!-- Right knee -->
+            <ellipse cx="204" cy="548" rx="16" ry="12" fill="url(#skinGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <!-- Left lower leg -->
+            <path d="M 104 556 L 104 660 Q 104 672 110 675 L 128 675 Q 132 672 130 660 L 128 556 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.18)" stroke-width="1"/>
+            <!-- Right lower leg -->
+            <path d="M 216 556 L 216 660 Q 216 672 210 675 L 192 675 Q 188 672 190 660 L 192 556 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.18)" stroke-width="1"/>
+            <!-- Left foot -->
+            <path d="M 102 672 Q 96 680 95 690 L 140 690 L 138 682 L 128 675 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.18)" stroke-width="1"/>
+            <!-- Right foot -->
+            <path d="M 218 672 Q 224 680 225 690 L 180 690 L 182 682 L 192 675 Z"
+                  fill="url(#skinGrad)" stroke="rgba(0,212,255,0.18)" stroke-width="1"/>
+
+            <!-- ===== CIRCULATORY HIGHLIGHTS ===== -->
+            <!-- Major arteries (glowing lines) -->
+            <path d="M 155 205 L 155 395" fill="none" stroke="rgba(255,60,60,0.2)" stroke-width="2" stroke-dasharray="8 6"/>
+            <path d="M 155 350 Q 130 380 120 430 L 116 540" fill="none" stroke="rgba(255,60,60,0.15)" stroke-width="1.5"/>
+            <path d="M 165 350 Q 190 380 200 430 L 204 540" fill="none" stroke="rgba(255,60,60,0.15)" stroke-width="1.5"/>
+
+            <!-- ===== OUTER BODY SHELL (transparent over all organs) ===== -->
+            <ellipse cx="160" cy="65" rx="44" ry="52" fill="none" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+            <path d="M 104 170 L 58 200 L 54 295 L 68 298 L 76 210 L 104 200 L 104 398 L 132 398 L 132 556 L 104 556 L 104 675 L 140 692 L 142 675 L 130 672 L 130 540 L 104 540 L 106 398 L 118 398 L 118 390 L 120 388 L 130 388 L 190 388 L 200 390 L 200 398 L 214 398 L 216 540 L 190 540 L 190 675 L 180 692 L 225 692 L 216 675 L 216 556 L 188 556 L 188 398 L 216 398 L 216 200 L 244 210 L 246 298 L 262 295 L 266 200 L 216 170 Q 215 152 160 148 Q 105 152 104 170 Z"
+                  fill="rgba(0,212,255,0.02)" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+            <!-- Neck connecting lines -->
+            <line x1="148" y1="115" x2="140" y2="145" stroke="rgba(0,212,255,0.25)" stroke-width="1"/>
+            <line x1="172" y1="115" x2="180" y2="145" stroke="rgba(0,212,255,0.25)" stroke-width="1"/>
+        </svg>
+
+        <!-- ===== HOTSPOTS ===== -->
+        <!-- Brain -->
+        <div class="hotspot" id="hs-brain" style="left:43%; top:3%; width:32px; height:32px;"
+             data-organs='["Brain","Skull","Cerebellum","Hypothalamus","Pituitary Gland"]'></div>
+        <!-- Eyes -->
+        <div class="hotspot" id="hs-eyes" style="left:34%; top:9%; width:24px; height:24px;"
+             data-organs='["Left Eye","Right Eye","Optic Nerve"]'></div>
+        <!-- Throat -->
+        <div class="hotspot" id="hs-throat" style="left:43%; top:17%; width:24px; height:24px;"
+             data-organs='["Throat","Esophagus","Trachea","Thyroid","Larynx"]'></div>
+        <!-- Heart (special) -->
+        <div class="hotspot heart" id="hs-heart" style="left:38%; top:31%; width:28px; height:28px;"
+             data-organs='["Heart"]'></div>
+        <!-- Lungs -->
+        <div class="hotspot" id="hs-lungs" style="left:28%; top:29%; width:26px; height:26px;"
+             data-organs='["Left Lung","Right Lung","Bronchi","Diaphragm"]'></div>
+        <!-- Liver -->
+        <div class="hotspot" id="hs-liver" style="left:57%; top:40%; width:24px; height:24px;"
+             data-organs='["Liver","Gallbladder","Bile Duct"]'></div>
+        <!-- Stomach -->
+        <div class="hotspot" id="hs-stomach" style="left:38%; top:40%; width:24px; height:24px;"
+             data-organs='["Stomach","Pancreas","Duodenum","Spleen"]'></div>
+        <!-- Intestines -->
+        <div class="hotspot" id="hs-intestines" style="left:40%; top:52%; width:26px; height:26px;"
+             data-organs='["Small Intestine","Large Intestine","Appendix","Rectum","Colon"]'></div>
+        <!-- Kidneys -->
+        <div class="hotspot" id="hs-kidneys" style="left:27%; top:47%; width:22px; height:22px;"
+             data-organs='["Left Kidney","Right Kidney","Adrenal Gland","Ureter"]'></div>
+        <!-- Spine -->
+        <div class="hotspot" id="hs-spine" style="left:46%; top:36%; width:22px; height:22px;"
+             data-organs='["Cervical Spine","Thoracic Spine","Lumbar Spine","Sacrum"]'></div>
+        <!-- Shoulder/Arm -->
+        <div class="hotspot" id="hs-arm" style="left:18%; top:27%; width:22px; height:22px;"
+             data-organs='["Shoulder Joint","Bicep","Tricep","Humerus","Rotator Cuff"]'></div>
+        <!-- Knee -->
+        <div class="hotspot" id="hs-knee" style="left:30%; top:76%; width:22px; height:22px;"
+             data-organs='["Knee Joint","Patella","ACL","Meniscus","Femur","Tibia"]'></div>
+    </div>
+</div>
+
+<!-- Vitals panel -->
+<div id="vitals">
+    <div class="vital-card">
+        <div class="vital-label">HEART RATE</div>
+        <div class="vital-value" id="hr-val">72<span class="vital-unit">BPM</span></div>
+        <div class="vital-bar" id="hr-bar"><div class="vital-bar-fill"></div></div>
+    </div>
+    <div class="vital-card">
+        <div class="vital-label">SpO₂</div>
+        <div class="vital-value" id="spo2-val">98<span class="vital-unit">%</span></div>
+        <div class="vital-bar" id="spo2-bar"><div class="vital-bar-fill" style="width:97%"></div></div>
+    </div>
+    <div class="vital-card">
+        <div class="vital-label">RESPIRATION</div>
+        <div class="vital-value" id="resp-val">16<span class="vital-unit">RPM</span></div>
+        <div class="vital-bar" id="resp-bar"><div class="vital-bar-fill"></div></div>
+    </div>
+    <div class="vital-card">
+        <div class="vital-label">TEMPERATURE</div>
+        <div class="vital-value">98.6<span class="vital-unit">°F</span></div>
+        <div class="vital-bar"><div class="vital-bar-fill" style="width:62%"></div></div>
+    </div>
+</div>
+
+<!-- Info Panel -->
+<div id="info-panel">
+    <button id="close-btn" onclick="closePanel()">✕</button>
+    <h2 id="panel-title">Organ</h2>
+    <div class="system-tag" id="panel-system">SYSTEM</div>
+    <p id="panel-desc">Description</p>
+    <div id="panel-stats"></div>
+</div>
+
+<!-- Organ list dropdown -->
+<div id="organ-list">
+    <div class="list-header">SELECT STRUCTURE</div>
+    <div id="organ-list-items"></div>
+</div>
+
+<!-- ECG -->
+<div id="ecg-container">
+    <div id="ecg-label">ECG — LEAD II</div>
+    <canvas id="ecg-canvas" width="500" height="60"></canvas>
+</div>
+
+<!-- Breath ring -->
+<div id="breath-ring">
+    <div class="breath-circle"></div>
+    <div class="breath-circle"></div>
+    <div class="breath-circle"></div>
+    <div class="breath-center"></div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<script>
+    // ===== ORGAN DATA =====
+    const organData = {
+      "Brain": {
+        system: "CENTRAL NERVOUS SYSTEM",
+        desc: "The brain is the command center of the nervous system, controlling thought, memory, emotion, touch, motor skills, vision, breathing, and more.",
+        stats: [{ l:"WEIGHT", v:"1.4 kg" }, { l:"NEURONS", v:"~86 billion" }, { l:"BLOOD FLOW", v:"750 ml/min" }, { l:"O₂ USE", v:"20% of body" }]
+      },
+      "Skull": {
+        system: "SKELETAL SYSTEM",
+        desc: "The skull is a bony structure that forms the head, protecting the brain and supporting the structures of the face.",
+        stats: [{ l:"BONES", v:"22 total" }, { l:"CRANIAL BONES", v:"8" }, { l:"FACIAL BONES", v:"14" }]
+      },
+      "Cerebellum": {
+        system: "CENTRAL NERVOUS SYSTEM",
+        desc: "Located at the back of the brain, the cerebellum coordinates muscle movements, maintains posture, and controls balance.",
+        stats: [{ l:"NEURONS", v:"~69 billion" }, { l:"SIZE", v:"~10% of brain" }]
+      },
+      "Hypothalamus": {
+        system: "ENDOCRINE / CNS",
+        desc: "A small region of the brain linking the nervous system to the endocrine system. Controls hunger, thirst, temperature, and sleep.",
+        stats: [{ l:"SIZE", v:"4 cm³" }, { l:"HORMONES", v:"7+ types" }]
+      },
+      "Pituitary Gland": {
+        system: "ENDOCRINE SYSTEM",
+        desc: "The 'master gland' — controls many other hormone glands in the body including thyroid, adrenals, and gonads.",
+        stats: [{ l:"SIZE", v:"~0.5g" }, { l:"HORMONES", v:"9 key hormones" }]
+      },
+      "Left Eye": {
+        system: "VISUAL SYSTEM",
+        desc: "The eye detects light and converts it into electrochemical impulses in neurons. Contains 120 million rod cells and 6 million cone cells.",
+        stats: [{ l:"PHOTORECEPTORS", v:"126 million" }, { l:"COLOR RANGE", v:"10 million colors" }, { l:"BLIND SPOT", v:"15° nasal" }]
+      },
+      "Right Eye": {
+        system: "VISUAL SYSTEM",
+        desc: "Works in tandem with the left eye providing binocular vision and depth perception essential for 3D spatial awareness.",
+        stats: [{ l:"PHOTORECEPTORS", v:"126 million" }, { l:"RESOLUTION", v:"~576 MP equiv" }]
+      },
+      "Optic Nerve": {
+        system: "VISUAL / NERVOUS SYSTEM",
+        desc: "Transmits visual information from the retina to the brain's visual cortex. Contains over 1 million nerve fibers.",
+        stats: [{ l:"NERVE FIBERS", v:"1.2 million" }, { l:"SIGNAL SPEED", v:"120 m/s" }]
+      },
+      "Heart": {
+        system: "CARDIOVASCULAR SYSTEM",
+        desc: "A muscular organ that pumps blood through the circulatory system. Beats approximately 100,000 times per day, pumping 5 liters of blood per minute.",
+        stats: [{ l:"RATE", v:"60–100 BPM" }, { l:"OUTPUT", v:"5 L/min" }, { l:"BEATS/DAY", v:"~100,000" }, { l:"WEIGHT", v:"280–340 g" }]
+      },
+      "Left Lung": {
+        system: "RESPIRATORY SYSTEM",
+        desc: "The left lung has two lobes and is slightly smaller than the right to accommodate the heart. Responsible for gas exchange with the cardiovascular system.",
+        stats: [{ l:"LOBES", v:"2" }, { l:"CAPACITY", v:"~2.5 L" }, { l:"ALVEOLI", v:"~300 million" }]
+      },
+      "Right Lung": {
+        system: "RESPIRATORY SYSTEM",
+        desc: "The right lung has three lobes and is slightly larger. Together both lungs provide ~6L of total capacity and process ~11,000L of air daily.",
+        stats: [{ l:"LOBES", v:"3" }, { l:"CAPACITY", v:"~3 L" }, { l:"ALVEOLI", v:"~300 million" }]
+      },
+      "Bronchi": {
+        system: "RESPIRATORY SYSTEM",
+        desc: "The main airways branching from the trachea into each lung, subdividing into progressively smaller bronchioles.",
+        stats: [{ l:"BRANCHES", v:"~23 generations" }, { l:"DIAMETER", v:"10–15 mm" }]
+      },
+      "Diaphragm": {
+        system: "RESPIRATORY / MUSCULAR",
+        desc: "A dome-shaped muscle below the lungs, the primary muscle of respiration. Contracts 15–20 times per minute during normal breathing.",
+        stats: [{ l:"CONTRACTIONS", v:"15–20 /min" }, { l:"TYPE", v:"Skeletal muscle" }]
+      },
+      "Liver": {
+        system: "DIGESTIVE / METABOLIC",
+        desc: "The largest internal organ, performing over 500 vital functions including detoxification, protein synthesis, and bile production.",
+        stats: [{ l:"WEIGHT", v:"1.4–1.8 kg" }, { l:"FUNCTIONS", v:"500+" }, { l:"BLOOD FLOW", v:"1.5 L/min" }, { l:"REGENERATION", v:"Yes" }]
+      },
+      "Gallbladder": {
+        system: "DIGESTIVE SYSTEM",
+        desc: "A small organ under the liver that stores and concentrates bile produced by the liver for release into the small intestine.",
+        stats: [{ l:"CAPACITY", v:"30–50 mL" }, { l:"BILE CONCENTRATION", v:"5× more" }]
+      },
+      "Bile Duct": {
+        system: "DIGESTIVE SYSTEM",
+        desc: "The common bile duct transports bile from the liver and gallbladder to the duodenum to aid in fat digestion.",
+        stats: [{ l:"LENGTH", v:"~7.5 cm" }, { l:"DIAMETER", v:"~6 mm" }]
+      },
+      "Stomach": {
+        system: "DIGESTIVE SYSTEM",
+        desc: "A muscular, hollow organ that receives food from the esophagus and breaks it down with acids and enzymes before sending it to the small intestine.",
+        stats: [{ l:"CAPACITY", v:"~1 L empty / 4 L full" }, { l:"pH", v:"1.5–3.5" }, { l:"TRANSIT TIME", v:"2–6 hours" }]
+      },
+      "Pancreas": {
+        system: "ENDOCRINE / DIGESTIVE",
+        desc: "A dual-function gland producing digestive enzymes (exocrine) and hormones like insulin and glucagon (endocrine) to regulate blood sugar.",
+        stats: [{ l:"WEIGHT", v:"70–100 g" }, { l:"LENGTH", v:"~15 cm" }, { l:"INSULIN CELLS", v:"Islets of Langerhans" }]
+      },
+      "Spleen": {
+        system: "LYMPHATIC / IMMUNE",
+        desc: "Filters blood, recycles red blood cells, and plays a key role in immune function by producing lymphocytes.",
+        stats: [{ l:"WEIGHT", v:"150–200 g" }, { l:"BLOOD FILTER", v:"~500 mL/min" }]
+      },
+      "Small Intestine": {
+        system: "DIGESTIVE SYSTEM",
+        desc: "A coiled tube ~7 meters long where most digestion and nutrient absorption occurs. Contains millions of villi for maximum surface area.",
+        stats: [{ l:"LENGTH", v:"~6–7 m" }, { l:"SURFACE AREA", v:"~250 m²" }, { l:"VILLI", v:"millions" }]
+      },
+      "Large Intestine": {
+        system: "DIGESTIVE SYSTEM",
+        desc: "About 1.5 meters long, it absorbs water and electrolytes from indigestible food matter and forms waste for excretion.",
+        stats: [{ l:"LENGTH", v:"~1.5 m" }, { l:"DIAMETER", v:"~7.6 cm" }, { l:"TRANSIT TIME", v:"10–59 hrs" }]
+      },
+      "Appendix": {
+        system: "DIGESTIVE / IMMUNE",
+        desc: "A finger-sized pouch attached to the large intestine. May serve as a safe house for beneficial gut bacteria.",
+        stats: [{ l:"LENGTH", v:"5–10 cm" }, { l:"FUNCTION", v:"Immune support" }]
+      },
+      "Left Kidney": {
+        system: "URINARY SYSTEM",
+        desc: "Filters approximately 200 liters of blood daily, removing waste products and excess water to form urine.",
+        stats: [{ l:"FILTER RATE", v:"125 mL/min" }, { l:"NEPHRONS", v:"~1 million" }, { l:"BLOOD FILTERED", v:"200 L/day" }]
+      },
+      "Right Kidney": {
+        system: "URINARY SYSTEM",
+        desc: "Works in parallel with the left kidney. The right kidney sits slightly lower due to the liver above it.",
+        stats: [{ l:"FILTER RATE", v:"125 mL/min" }, { l:"WEIGHT", v:"120–170 g" }]
+      },
+      "Adrenal Gland": {
+        system: "ENDOCRINE SYSTEM",
+        desc: "Sits atop each kidney, producing adrenaline (epinephrine), cortisol, and other hormones critical for stress response and metabolism.",
+        stats: [{ l:"HORMONES", v:"50+ steroids" }, { l:"ADRENALINE", v:"Fight-or-flight" }]
+      },
+      "Cervical Spine": {
+        system: "SKELETAL / NERVOUS",
+        desc: "The 7 vertebrae (C1–C7) of the neck region, supporting the skull and providing the greatest range of motion of the spine.",
+        stats: [{ l:"VERTEBRAE", v:"7 (C1–C7)" }, { l:"ROTATION", v:"~90°" }]
+      },
+      "Thoracic Spine": {
+        system: "SKELETAL / NERVOUS",
+        desc: "12 vertebrae (T1–T12) forming the middle back, each articulating with a pair of ribs to form the rib cage.",
+        stats: [{ l:"VERTEBRAE", v:"12 (T1–T12)" }, { l:"RIB JOINTS", v:"24" }]
+      },
+      "Lumbar Spine": {
+        system: "SKELETAL / NERVOUS",
+        desc: "5 largest vertebrae (L1–L5) in the lower back, supporting most of the body's weight and enabling bending/twisting.",
+        stats: [{ l:"VERTEBRAE", v:"5 (L1–L5)" }, { l:"LOAD BEARING", v:"Highest force" }]
+      },
+      "Heart Rate": { system: "", desc: "", stats: [] },
+    };
+
+    // Default info for unknown organs
+    function getOrganInfo(name) {
+      return organData[name] || {
+        system: "HUMAN ANATOMY",
+        desc: `The ${name} is a vital anatomical structure playing an important role in normal body function and homeostasis.`,
+        stats: [{ l:"STATUS", v:"Normal" }]
+      };
+    }
+
+    // ===== PANEL & LIST LOGIC =====
+    const panel = document.getElementById('info-panel');
+    const organList = document.getElementById('organ-list');
+    const organListItems = document.getElementById('organ-list-items');
+    let listVisible = false;
+
+    function showOrganInfo(name) {
+      const data = getOrganInfo(name);
+      document.getElementById('panel-title').textContent = name.toUpperCase();
+      document.getElementById('panel-system').textContent = data.system;
+      document.getElementById('panel-desc').textContent = data.desc;
+      const statsEl = document.getElementById('panel-stats');
+      statsEl.innerHTML = data.stats.map(s =>
+        `<div class="stat-row"><span class="stat-label">${s.l}</span><span class="stat-value">${s.v}</span></div>`
+      ).join('');
+      panel.classList.add('visible');
+      hideList();
+    }
+
+    function closePanel() {
+      panel.classList.remove('visible');
+    }
+
+    function showList(organs, x, y) {
+      organListItems.innerHTML = organs.map(o =>
+        `<div class="organ-item" onclick="showOrganInfo('${o}')">${o}</div>`
+      ).join('');
+      // Position list near click
+      const listW = 210, listH = organs.length * 40 + 50;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let lx = x + 20, ly = y - 20;
+      if (lx + listW > vw - 10) lx = x - listW - 10;
+      if (ly + listH > vh - 10) ly = vh - listH - 10;
+      organList.style.left = lx + 'px';
+      organList.style.top = ly + 'px';
+      organList.classList.add('visible');
+      listVisible = true;
+    }
+
+    function hideList() {
+      organList.classList.remove('visible');
+      listVisible = false;
+    }
+
+    // Setup hotspots
+    document.querySelectorAll('.hotspot').forEach(hs => {
+      const organs = JSON.parse(hs.dataset.organs);
+      const label = organs[0];
+
+      // Tooltip
+      hs.addEventListener('mouseenter', e => {
+        const tip = document.getElementById('tooltip');
+        tip.textContent = organs.length > 1 ? `${label} +${organs.length - 1} more` : label;
+        tip.classList.add('show');
+      });
+      hs.addEventListener('mousemove', e => {
+        const tip = document.getElementById('tooltip');
+        tip.style.left = (e.clientX + 14) + 'px';
+        tip.style.top = (e.clientY - 28) + 'px';
+      });
+      hs.addEventListener('mouseleave', () => {
+        document.getElementById('tooltip').classList.remove('show');
+      });
+
+      // Click
+      hs.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('tooltip').classList.remove('show');
+        if (organs.length === 1) {
+          showOrganInfo(organs[0]);
+        } else {
+          const rect = hs.getBoundingClientRect();
+          showList(organs, rect.right, rect.top);
+        }
+      });
+    });
+
+    // Close list on outside click
+    document.addEventListener('click', e => {
+      if (!organList.contains(e.target)) hideList();
+    });
+
+    // ===== ECG ANIMATION =====
+    const ecgCanvas = document.getElementById('ecg-canvas');
+    const ctx = ecgCanvas.getContext('2d');
+    const W = 500, H = 60;
+    ecgCanvas.width = W; ecgCanvas.height = H;
+
+    // ECG waveform template (one beat cycle, normalized 0–1 x, -1 to +1 y)
+    function ecgWave(t) {
+      // t in [0,1] per beat cycle
+      const x = t * 2 * Math.PI;
+      // P wave
+      if (t < 0.15) return 0.15 * Math.sin(x / 0.15 * Math.PI);
+      // PR segment
+      if (t < 0.22) return 0;
+      // Q
+      if (t < 0.25) return -0.18 * Math.sin((t - 0.22) / 0.03 * Math.PI);
+      // R spike
+      if (t < 0.30) return 1.2 * Math.sin((t - 0.25) / 0.05 * Math.PI);
+      // S
+      if (t < 0.34) return -0.25 * Math.sin((t - 0.30) / 0.04 * Math.PI);
+      // ST segment
+      if (t < 0.42) return 0.02;
+      // T wave
+      if (t < 0.62) return 0.3 * Math.sin((t - 0.42) / 0.20 * Math.PI);
+      // TP baseline
+      return 0;
+    }
+
+    let ecgOffset = 0;
+    const ECG_SPEED = 1.8; // px per frame
+    const BEAT_WIDTH = 140; // px per heartbeat cycle
+    let ecgPoints = [];
+    const TRAIL = W + BEAT_WIDTH * 2;
+
+    for (let i = 0; i < TRAIL; i++) {
+      const t = ((i % BEAT_WIDTH) / BEAT_WIDTH);
+      ecgPoints.push(ecgWave(t));
+    }
+
+    function drawECG() {
+      ctx.clearRect(0, 0, W, H);
+      // Background
+      ctx.fillStyle = 'rgba(0,8,20,0)';
+      ctx.fillRect(0, 0, W, H);
+      // Grid lines
+      ctx.strokeStyle = 'rgba(0,212,255,0.06)';
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x < W; x += 25) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y < H; y += 15) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      // Glow pass (wider, dimmer)
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(0,212,255,0.25)';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#00d4ff';
+      let started = false;
+      for (let px = 0; px < W; px++) {
+        const idx = Math.floor(((px + ecgOffset) % TRAIL + TRAIL) % TRAIL);
+        const val = ecgPoints[idx] || 0;
+        const py = H / 2 - val * (H * 0.38);
+        if (!started) { ctx.moveTo(px, py); started = true; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Main line (sharp, bright)
+      ctx.beginPath();
+      ctx.strokeStyle = '#00e8ff';
+      ctx.lineWidth = 1.5;
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#00ffff';
+      started = false;
+      for (let px = 0; px < W; px++) {
+        const idx = Math.floor(((px + ecgOffset) % TRAIL + TRAIL) % TRAIL);
+        const val = ecgPoints[idx] || 0;
+        const py = H / 2 - val * (H * 0.38);
+        if (!started) { ctx.moveTo(px, py); started = true; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Leading dot
+      const leadIdx = Math.floor(((W - 1 + ecgOffset) % TRAIL + TRAIL) % TRAIL);
+      const leadVal = ecgPoints[leadIdx] || 0;
+      const leadY = H / 2 - leadVal * (H * 0.38);
+      ctx.beginPath();
+      ctx.arc(W - 1, leadY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#00ffff';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ecgOffset = (ecgOffset + ECG_SPEED) % TRAIL;
+      requestAnimationFrame(drawECG);
+    }
+    drawECG();
+
+    // ===== VITAL SIGN FLUCTUATION =====
+    let hrBase = 72;
+    setInterval(() => {
+      const hr = hrBase + Math.round((Math.random() - 0.5) * 4);
+      document.getElementById('hr-val').innerHTML = hr + '<span class="vital-unit">BPM</span>';
+    }, 2000);
+</script>
+</body>
+</html>
