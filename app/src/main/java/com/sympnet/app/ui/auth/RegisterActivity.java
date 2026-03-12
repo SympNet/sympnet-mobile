@@ -14,7 +14,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.sympnet.app.R;
-
 import java.util.Calendar;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -27,8 +26,6 @@ public class RegisterActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView tvLogin;
     private FirebaseAuth mAuth;
-
-    // Stores the selected date for backend use
     private String selectedDateOfBirth = "";
 
     @Override
@@ -38,7 +35,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
-        // Wire up views
         etFirstName       = findViewById(R.id.etFirstName);
         etLastName        = findViewById(R.id.etLastName);
         etEmail           = findViewById(R.id.etEmail);
@@ -51,13 +47,8 @@ public class RegisterActivity extends AppCompatActivity {
         progressBar       = findViewById(R.id.progressBar);
         tvLogin           = findViewById(R.id.tvLogin);
 
-        // DatePickerDialog on click
         etDateOfBirth.setOnClickListener(v -> showDatePicker());
-
-        // Register button
         btnRegister.setOnClickListener(v -> registerUser());
-
-        // Back to login
         tvLogin.setOnClickListener(v -> {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
@@ -65,30 +56,18 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void showDatePicker() {
-        Calendar calendar = Calendar.getInstance();
-
-        // Default max date = today (can't pick future date)
-        int year  = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day   = calendar.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // Format as YYYY-MM-DD for backend
+        Calendar cal = Calendar.getInstance();
+        new DatePickerDialog(this,
+                (view, year, month, day) -> {
                     selectedDateOfBirth = String.format("%04d-%02d-%02d",
-                            selectedYear, selectedMonth + 1, selectedDay);
-                    // Display nicely to user
-                    String displayDate = String.format("%02d/%02d/%04d",
-                            selectedDay, selectedMonth + 1, selectedYear);
-                    etDateOfBirth.setText(displayDate);
+                            year, month + 1, day);
+                    etDateOfBirth.setText(String.format("%02d/%02d/%04d",
+                            day, month + 1, year));
                 },
-                year, month, day
-        );
-
-        // Prevent selecting future dates
-        datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
-        datePickerDialog.show();
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH))
+                .show();
     }
 
     private void registerUser() {
@@ -99,14 +78,11 @@ public class RegisterActivity extends AppCompatActivity {
         String confirm   = etConfirmPassword.getText().toString().trim();
         String phone     = etPhone.getText().toString().trim();
 
-        // Get selected gender
-        int selectedGenderId = rgGender.getCheckedRadioButtonId();
+        // Gender
         String gender = "";
-        if (selectedGenderId == R.id.rbMale) {
-            gender = "Male";
-        } else if (selectedGenderId == R.id.rbFemale) {
-            gender = "Female";
-        }
+        int genderId = rgGender.getCheckedRadioButtonId();
+        if (genderId == R.id.rbMale)        gender = "Male";
+        else if (genderId == R.id.rbFemale) gender = "Female";
 
         // Validation
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty()
@@ -134,10 +110,8 @@ public class RegisterActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         btnRegister.setEnabled(false);
 
-        // Final values for use in lambda
         String finalGender = gender;
 
-        // Create Firebase account
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -152,7 +126,16 @@ public class RegisterActivity extends AppCompatActivity {
                                                     "Verification email sent to " + email,
                                                     Toast.LENGTH_LONG).show();
 
-                                            // Pass data to VerifyEmailActivity
+                                            // Save registration data for profile
+                                            getSharedPreferences("ProfilePrefs", MODE_PRIVATE)
+                                                    .edit()
+                                                    .putString("firstName", firstName)
+                                                    .putString("lastName", lastName)
+                                                    .putString("phone", phone)
+                                                    .putString("dateOfBirth", selectedDateOfBirth)
+                                                    .putString("gender", finalGender)
+                                                    .apply();
+
                                             Intent intent = new Intent(this, VerifyEmailActivity.class);
                                             intent.putExtra("firstName", firstName);
                                             intent.putExtra("lastName", lastName);

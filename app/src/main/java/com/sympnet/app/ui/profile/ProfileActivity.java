@@ -1,7 +1,6 @@
 package com.sympnet.app.ui.profile;
 
 import android.app.DatePickerDialog;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;

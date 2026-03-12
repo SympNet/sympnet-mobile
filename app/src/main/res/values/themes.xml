@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.SympNet" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">#009688</item>
@@ -7,6 +8,9 @@
         <item name="colorSecondaryVariant">#00796B</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="android:statusBarColor">#00796B</item>
-        <item name="android:windowBackground">#F5F5F5</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="boxBackgroundColor">#F0FAFA</item>
     </style>
 </resources>

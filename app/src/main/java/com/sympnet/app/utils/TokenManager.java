@@ -24,27 +24,22 @@ public class TokenManager {
                 .apply();
     }
 
-    public void saveSession(String token, String role, int userId, String email) {
-        prefs.edit()
-                .putString(KEY_TOKEN, token)
-                .putString(KEY_ROLE, role)
-                .putInt(KEY_USER_ID, userId)
-                .putString(KEY_EMAIL, email)
-                .apply();
+    public void saveEmail(String email) {
+        prefs.edit().putString(KEY_EMAIL, email).apply();
     }
 
     public String getToken() { return prefs.getString(KEY_TOKEN, null); }
-    public String getRole()  { return prefs.getString(KEY_ROLE, null); }
-    public int getUserId()   { return prefs.getInt(KEY_USER_ID, -1); }
+    public String getRole() { return prefs.getString(KEY_ROLE, null); }
+    public int getUserId() { return prefs.getInt(KEY_USER_ID, -1); }
     public String getEmail() { return prefs.getString(KEY_EMAIL, null); }
 
     public boolean isLoggedIn() { return getToken() != null; }
 
-    public void clearToken() {
+    public void logout() {
         prefs.edit().clear().apply();
     }
 
-    public void logout() {
-        prefs.edit().clear().commit();
+    public void clearToken() {
+        logout();
     }
 }

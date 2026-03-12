@@ -6,7 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    // 10.0.2.2 = localhost depuis l'émulateur Android
+
     private static final String BASE_URL = "http://192.168.100.8/api/";
     private static Retrofit instance;
 

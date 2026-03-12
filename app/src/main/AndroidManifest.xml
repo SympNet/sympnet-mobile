@@ -1,4 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -6,11 +9,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SympNet">
+        android:theme="@style/Theme.SympNet"
+        android:usesCleartextTraffic="true">
 
-        <!-- ✅ All activities go INSIDE <application> -->
+        <!-- ✅ LAUNCHER -->
         <activity
-            android:name=".ui.auth.LoginActivity"
+            android:name=".ui.auth.OnboardingActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -18,15 +22,24 @@
             </intent-filter>
         </activity>
 
+        <!-- ✅ AUTH -->
+        <activity android:name=".ui.auth.LoginActivity" />
         <activity android:name=".ui.auth.RegisterActivity" />
-        <activity android:name=".ui.home.HomeActivity" />
-        <activity android:name=".ui.MainActivity" />
         <activity android:name=".ui.auth.VerifyEmailActivity" />
         <activity android:name=".ui.auth.ForgotPasswordActivity" />
-        <activity android:name=".ui.profile.ProfileActivity" />
+
+        <!-- ✅ HOME -->
+        <activity android:name=".ui.home.HomeActivity" />
+
+        <!-- ✅ PROFILE -->
         <activity android:name=".ui.profile.ProfileViewActivity" />
         <activity android:name=".ui.profile.ProfileEditActivity" />
+
+        <!-- ✅ BODY MAP -->
         <activity android:name=".ui.body.BodyMapActivity" />
+
+        <!-- ✅ MAIN -->
+        <activity android:name=".ui.MainActivity" />
 
     </application>
 

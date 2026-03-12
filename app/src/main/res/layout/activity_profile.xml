@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#F5F5F5">
+        android:background="#F0F4F4">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="32dp">
+                android:padding="20dp">
 
                 <!-- Profile Photo -->
                 <LinearLayout
@@ -36,37 +36,60 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:layout_marginBottom="24dp">
+                    android:paddingTop="16dp"
+                    android:paddingBottom="24dp">
 
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/ivProfilePhoto"
                         android:layout_width="100dp"
                         android:layout_height="100dp"
                         android:src="@drawable/ic_default_avatar"
-                        android:layout_marginBottom="12dp"/>
+                        android:layout_marginBottom="10dp"/>
 
                     <TextView
                         android:id="@+id/tvChangePhoto"
                         android:text="Change Photo"
                         android:textColor="#009688"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
                         android:padding="4dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
+
+                <!-- Section: Personal Info -->
+                <TextView
+                    android:text="PERSONAL INFORMATION"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#009688"
+                    android:letterSpacing="0.12"
+                    android:layout_marginBottom="12dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
 
                 <!-- First Name -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="First Name"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etFirstName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textPersonName"/>
+                        android:inputType="textPersonName"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Last Name -->
@@ -74,13 +97,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Last Name"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etLastName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textPersonName"/>
+                        android:inputType="textPersonName"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Phone -->
@@ -88,27 +121,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Phone Number"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_call"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="phone"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- CNSS -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="CNSS Number"
-                    android:layout_marginBottom="16dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCnss"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"/>
+                        android:inputType="phone"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Date of Birth -->
@@ -116,7 +145,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Date of Birth"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDateOfBirth"
@@ -125,7 +162,45 @@
                         android:focusable="false"
                         android:focusableInTouchMode="false"
                         android:cursorVisible="false"
-                        android:clickable="true"/>
+                        android:clickable="true"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Divider -->
+                <TextView
+                    android:text="MEDICAL INFORMATION"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#009688"
+                    android:letterSpacing="0.12"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <!-- CNSS -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="CNSS Number"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_agenda"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCnss"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Medical History -->
@@ -134,14 +209,24 @@
                     android:layout_height="wrap_content"
                     android:hint="Medical History (Antécédents)"
                     android:layout_marginBottom="24dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_info_details"
+                    app:startIconTint="#009688"
+                    app:boxStrokeColor="#009688"
+                    app:hintTextColor="#009688"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etMedicalHistory"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
-                        android:minLines="3"
-                        android:gravity="top"/>
+                        android:minLines="4"
+                        android:gravity="top|start"
+                        android:textColor="#1A1A2E"
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <ProgressBar
@@ -151,7 +236,7 @@
                     android:layout_gravity="center"
                     android:indeterminateTint="#009688"
                     android:visibility="gone"
-                    android:layout_marginBottom="16dp"/>
+                    android:layout_marginBottom="12dp"/>
 
                 <!-- Save Button -->
                 <Button
@@ -160,13 +245,14 @@
                     android:layout_height="56dp"
                     android:text="Save Profile"
                     android:textSize="16sp"
-                    android:backgroundTint="#009688"/>
+                    android:textStyle="bold"
+                    android:backgroundTint="#009688"
+                    android:layout_marginBottom="16dp"/>
 
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
-    <!-- Sidebar -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="280dp"
